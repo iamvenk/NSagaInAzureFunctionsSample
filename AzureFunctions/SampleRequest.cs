@@ -17,7 +17,7 @@ namespace AzureFunctions
     {
         [FunctionName("SampleRequest")]
         public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req,
             ILogger log)
         {
             string reqType = req.Query["type"];

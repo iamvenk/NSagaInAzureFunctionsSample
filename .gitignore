@@ -7,3 +7,8 @@
 /PolicyBusiness/obj
 /PolicyEntities/obj
 /PolicyManagementSaga/obj
+/AzureFunctions/Properties/PublishProfiles
+/NSaga/bin
+/PolicyBusiness/bin
+/PolicyEntities/bin
+/PolicyManagementSaga/bin
