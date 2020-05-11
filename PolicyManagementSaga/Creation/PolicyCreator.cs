@@ -9,6 +9,9 @@ using System.Linq;
 
 namespace PolicyManagementSaga.Creation
 {
+    /// <summary>
+    /// Wrapper class to create new policy. Accepts new policy reuquest and execute saga to create new policy
+    /// </summary>
     public class PolicyCreator
     {
         private NewPolicyRequest _newPolicyRequest;
@@ -16,6 +19,10 @@ namespace PolicyManagementSaga.Creation
         private ISagaRepository sagaRepository;
         private Guid _guid;
 
+        /// <summary>
+        /// Default constructor to initialize the policy constructor
+        /// </summary>
+        /// <param name="request">New policy request</param>
         public PolicyCreator(NewPolicyRequest request)
         {
             _newPolicyRequest = request;
@@ -30,59 +37,42 @@ namespace PolicyManagementSaga.Creation
             ((ISagaMessage)_newPolicyRequest).CorrelationId = _guid;
         }
 
+        /// <summary>
+        /// Executes saga to create policy
+        /// </summary>
+        /// <returns>Policy creation result</returns>
         public Result Do()
         {
-            var result = new Result();
+            var consumer = new SagaConsumer(sagaMediator);
 
             // Initialize Saga
-            //sagaMediator.Consume(_newPolicyRequest);
+            consumer.Consume(_newPolicyRequest);
 
             // Underwrite
-            //sagaMediator.Consume(new Underwriting(_guid));
+            consumer.Consume(new Underwriting(_guid));
 
             // Process Payment
-            //sagaMediator.Consume(new BankPaymentProcessing(_guid, _newPolicyRequest.Payment));
+            consumer.Consume(new BankPaymentProcessing(_guid));
 
             // Create Policyy
-            //sagaMediator.Consume(new PolicyCreation(_guid));
+            consumer.Consume(new PolicyCreation(_guid));
 
-            // Initiate New Policy Request -> Underwrite -> Process Payment -> Generate Policy
+            var sagaData = sagaRepository.Find<PolicyCreationSaga>(_guid).SagaData;
 
-            var errs = Execute(sagaMediator, 
-                                _newPolicyRequest,
-                                new Underwriting(_guid),
-                                new BankPaymentProcessing(_guid, _newPolicyRequest.Payment),
-                                new PolicyCreation(_guid));
+            var result = new Result()
+            {
+                Policy = sagaData.Policy,
+                Invoice = sagaData.Invoice,
+                PaymentConfimrationNumber = sagaData.PaymentConfirmationNumber,
+                Errors = consumer.Errors
+            };
 
-            var saga = sagaRepository.Find<PolicyCreationSaga>(_guid);
-
-            result.Policy = saga.SagaData.Policy;
-            result.Invoice = saga.SagaData.Invoice;
-            result.PaymentConfimrationNumber = saga.SagaData.PaymentConfirmationNumber;
-            result.Errors = errs;
-            
             return result;
         }
 
-        public List<string> Execute(ISagaMediator mediator, IInitiatingSagaMessage initMsg, params ISagaMessage[] sagaSteps)
-        {
-            List<string> errors = new List<string>();
-
-            // Initalize
-            var opResult = mediator.Consume(initMsg);
-            if (opResult.HasErrors)
-                errors.AddCollection(opResult.Errors);
-
-            foreach(var step in sagaSteps)
-            {
-                opResult = mediator.Consume(step);
-                if (opResult.HasErrors)
-                    errors.AddCollection(opResult.Errors);
-            }
-
-            return errors;
-        }
-
+        /// <summary>
+        /// Policy creation result
+        /// </summary>
         public class Result
         {
             public Policy Policy { get; set; }

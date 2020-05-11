@@ -45,10 +45,12 @@ namespace PolicyManagementSaga.Creation
             var policy = message.ConvertToPolicy();
 
             var validationResult = _policyMmgt.ValidateNewPolicyRequest(policy);
-            if (!validationResult.Any())
-                SagaData.Policy = policy;
+            if(validationResult.Any())
+                return new OperationResult(validationResult.ToArray());
+            
+            SagaData.Policy = policy;
 
-            return new OperationResult(validationResult.ToArray());
+            return new OperationResult();
         }
 
         #endregion
@@ -84,7 +86,7 @@ namespace PolicyManagementSaga.Creation
             if (SagaData.Invoice == null)
                 return new OperationResult();
 
-            var paymentResult = _pmntProcess.InvoicePayment(SagaData.Invoice, message.BankPayment);
+            var paymentResult = _pmntProcess.InvoicePayment(SagaData.Invoice, SagaData.Request.Payment);
             SagaData.PaymentConfirmationNumber = paymentResult.PaymentConfirmatitonNumber;
 
             return new OperationResult(paymentResult.Errors.ToArray());

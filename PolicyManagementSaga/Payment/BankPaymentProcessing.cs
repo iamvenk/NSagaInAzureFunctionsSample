@@ -10,12 +10,9 @@ namespace PolicyManagementSaga.Payment
     {
         public Guid CorrelationId { get; set; }
 
-        public BankPayment BankPayment { get; set; }
-
-        public BankPaymentProcessing(Guid correlationId, BankPayment bankPayment)
+        public BankPaymentProcessing(Guid correlationId)
         {
             this.CorrelationId = correlationId;
-            this.BankPayment = bankPayment;
         }
     }
 }
